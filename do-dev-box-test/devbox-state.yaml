@@ -1,0 +1,215 @@
+# Devbox Declarative State — 2026-03-20
+# This file describes the current state of the devbox infrastructure.
+# It is a reference document, not consumed by any tooling.
+
+droplet:
+  provider: digitalocean
+  id: 559457842
+  name: devbox
+  region: tor1
+  size: cpu-optimized-4vcpu-8gb  # $84/mo
+  image: ubuntu-22-04-x64-docker
+  public_ip: 159.203.8.62
+  private_ips:
+    - 10.118.0.2  # eth1 — used for WARP routing
+    - 10.20.0.5   # eth0
+  firewall:
+    name: devbox-lockdown
+    id: 93cdff05-1d73-4ddf-a0cf-2751aa0b28d3
+    inbound: none  # zero public attack surface
+    outbound: all
+  ufw:
+    - 22/tcp: allow
+    - 2375/tcp: allow
+    - 2376/tcp: allow
+
+storage:
+  type: digitalocean-block-storage
+  size_gb: 100  # $10/mo
+  mount: /mnt/data
+  layout:
+    docker_root: /mnt/data/docker
+    workspace: /mnt/data/workspace  # symlinked from ~/workspace
+    repos: /mnt/data/repos          # symlinked from ~/repos
+    secrets: /mnt/data/secrets/.env  # not yet populated
+
+software:
+  docker: "29.3.0"
+  docker_compose: "5.1.0"
+  cloudflared: "2026.3.0"
+  node: "20.20.1"  # via nvm, requires `source ~/.nvm/nvm.sh`
+  npm: "10.8.2"
+  os: ubuntu-22.04
+
+cloudflare:
+  account_id: 1ac38d5d4b3eb39c98c1ef5ddf137d6d
+  zone: danhoek.dev
+  zone_id: 00acf01c56132c6aac3c51ad03603b4b
+  identity_provider: google-oauth  # scycer2@gmail.com
+
+  tunnel:
+    name: devbox
+    id: ea11b08c-0009-4567-b652-a7026dbef563
+    config_path: /etc/cloudflared/config.yml
+    credentials_path: /root/.cloudflared/ea11b08c-0009-4567-b652-a7026dbef563.json
+    warp_routing: true
+    ip_route: 10.118.0.2/32
+    ingress:
+      - hostname: devbox.danhoek.dev
+        service: ssh://localhost:22
+      - service: http_status:404
+
+  dns_records:
+    - name: devbox.danhoek.dev
+      type: CNAME
+      target: ea11b08c-0009-4567-b652-a7026dbef563.cfargotunnel.com
+      proxied: true
+      purpose: SSH access via cloudflared proxy
+    - name: "*.devbox.danhoek.dev"
+      type: CNAME
+      target: ea11b08c-0009-4567-b652-a7026dbef563.cfargotunnel.com
+      proxied: true
+      purpose: wildcard for dynamic dev port routing (not yet wired to reverse proxy)
+    - name: webhooks-orbiter.danhoek.dev
+      type: CNAME
+      target: ea11b08c-0009-4567-b652-a7026dbef563.cfargotunnel.com
+      proxied: true
+      purpose: public webhook endpoint (not yet wired in tunnel ingress)
+
+  access_apps:
+    - name: devbox
+      id: e91e4b8d-fcd7-4f82-bfb4-b08c78dcb5e7
+      domain: devbox.danhoek.dev
+      policy: allow scycer2@gmail.com
+    - name: devbox-wildcard
+      id: 26f8debb-6478-4f3c-8e27-463a34c79137
+      domain: "*.devbox.danhoek.dev"
+      policy: allow scycer2@gmail.com
+    - name: webhooks-orbiter
+      id: 69323c50-0b04-423e-bac6-7d24e47e97aa
+      domain: webhooks-orbiter.danhoek.dev
+      policy: bypass (public)
+    - name: devbox (infrastructure)
+      id: 9e4c37bd-9305-48bf-acb4-7e7e5fe7db6f
+      domain: null  # WARP-based, no hostname
+      policy: allow scycer2@gmail.com, SSH user root
+    - name: Warp Login App
+      id: e94ce7f6-63ff-4ac2-a5d2-8b3643a16cf3
+      domain: danhoek.cloudflareaccess.com/warp
+      policy: device enrollment
+
+  infrastructure_access:
+    target: devbox
+    ip: 10.118.0.2
+    virtual_network: e1dffd4f-5e62-4b82-a296-b2ee4edfcec9
+    ssh_ca: /etc/ssh/ca.pub
+
+  gateway:
+    proxy: tcp + udp enabled
+    network_policies:
+      - name: Allow devbox SSH direct
+        precedence: 1000
+        match: "net.dst.ip == 10.118.0.2 and net.dst.port == 22"
+        action: allow
+        identity: scycer2@gmail.com
+      - name: devbox
+        precedence: 1708
+        match: "access.target present"
+        action: allow
+      - name: devbox2
+        precedence: 3640
+        match: "net.dst.ip in {10.0.0.0/8}"
+        action: block
+
+  warp:
+    onboarding_profile:
+      id: fdaae54f-d2dc-4c6f-9a50-2f1b87d7fe3c
+      precedence: 1000
+      mode: exclude
+      note: "10.0.0.0/8 split to carve out 10.118.0.0/20 (routes through WARP)"
+    default_profile:
+      mode: include
+      includes: [10.118.0.2/32]
+
+ssh:
+  authorized_keys:
+    - key: "ssh-ed25519 ...QdOZa dan.hoek@icanstudy.com"
+      device: linux-dev-box
+    - key: "ssh-ed25519 ...aunfS scyce@dan-sep-22"
+      device: windows-pc (danmain-nov2024)
+    - key: "ssh-ed25519 ...47Em u0_a728@localhost"
+      device: android-tablet
+    - key: "ssh-ed25519 ...9qhy u0_a217@localhost"
+      device: android-phone (Xiaomi 13T)
+  sshd:
+    pubkey_authentication: true
+    trusted_user_ca_keys: /etc/ssh/ca.pub
+
+connection_methods:
+  - name: VS Code SSH (Windows)
+    path: cloudflared proxy → devbox.danhoek.dev
+    config_host: devbox.danhoek.dev
+    status: working
+
+  - name: Terminal SSH (Windows)
+    path: WARP → 10.118.0.2 (short-lived certs)
+    config_host: devbox
+    status: working
+
+  - name: Terminal SSH (Linux box)
+    path: cloudflared proxy → devbox.danhoek.dev
+    config_host: devbox.danhoek.dev
+    status: working
+
+  - name: Terminal SSH (Android tablet)
+    path: cloudflared proxy → devbox.danhoek.dev
+    config_host: devbox
+    status: working
+    setup: Termux + cloudflared binary + SSH config
+
+  - name: Terminal SSH (Android phone)
+    path: cloudflared proxy → devbox.danhoek.dev
+    config_host: devbox
+    status: working
+    setup: Termux + cloudflared binary + SSH config
+
+  - name: Dynamic dev ports (browser)
+    path: "p{PORT}.devbox.danhoek.dev → localhost:{PORT}"
+    status: dns-and-access-ready, needs-reverse-proxy-and-tunnel-ingress
+
+  - name: Webhooks
+    path: webhooks-orbiter.danhoek.dev → localhost:8080
+    status: dns-and-access-ready, needs-tunnel-ingress
+
+ssh_configs:
+  windows: # c:\Users\scyce\.ssh\config
+    - host: devbox.danhoek.dev
+      proxy_command: '"C:\Program Files (x86)\cloudflared\cloudflared.exe" access ssh --hostname %h'
+      user: root
+    - host: devbox
+      hostname: 10.118.0.2
+      user: root
+
+  linux: # ~/.ssh/config
+    - host: devbox.danhoek.dev
+      proxy_command: cloudflared access ssh --hostname %h
+      user: root
+
+  android_termux: # ~/.ssh/config
+    - host: devbox
+      proxy_command: cloudflared access ssh --hostname devbox.danhoek.dev
+      user: root
+
+tokens:
+  cf_api_token: do-dev-box-test/.env (CF_API_TOKEN)
+  cf_api_permissions: [Zero Trust Write, Access Apps & Policies Write, Access SSH Auditing Write]
+  cf_api_note: does NOT have DNS edit permission — use cloudflared on droplet for DNS routes
+  do_api_token: do-dev-box-test/.env (DO_API_TOKEN)
+
+todo:
+  - description: Set up reverse proxy on droplet for wildcard port routing
+    detail: "Install Caddy or similar, map p{PORT}.devbox.danhoek.dev → localhost:{PORT}"
+  - description: Add wildcard + webhooks to tunnel ingress config
+    detail: "Update /etc/cloudflared/config.yml with *.devbox.danhoek.dev and webhooks-orbiter.danhoek.dev"
+  - description: Populate /mnt/data/secrets/.env with API keys
+  - description: Reboot droplet (system restart required since provisioning)

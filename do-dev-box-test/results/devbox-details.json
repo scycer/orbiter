@@ -1,0 +1,13 @@
+{
+  "region": "tor1",
+  "droplet_id": "559457842",
+  "droplet_ip": "159.203.8.62",
+  "volume_id": "79caeb3f-23a1-11f1-bacb-0a58ac14e6e2",
+  "droplet_size": "c-4",
+  "monthly_cost_estimate": {
+    "droplet": 84,
+    "block_storage_100gb": 10,
+    "backups_20pct": 17,
+    "total": 111
+  }
+}

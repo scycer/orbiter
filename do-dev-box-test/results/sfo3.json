@@ -1,0 +1,16 @@
+{
+  "anthropic_connect_ms": 3,
+  "anthropic_ttfb_ms": 132,
+  "openai_connect_ms": 4,
+  "github_connect_ms": 19,
+  "dockerhub_connect_ms": 75,
+  "chain_20_total_ms": 57,
+  "chain_20_avg_ms": 2,
+  "git_clone_ms": 777,
+  "docker_pull_node_ms": 734,
+  "docker_pull_python_ms": 678,
+  "region": "sfo3",
+  "ip": "164.92.111.62",
+  "ping_from_local_ms": 180.675,
+  "ssh_rtt_from_local_ms": 3122
+}
