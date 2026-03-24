@@ -1,0 +1,15 @@
+[Unit]
+Description=Orchestrator Vite Dev Server
+After=network.target orchestrator-api.service
+
+[Service]
+Type=simple
+WorkingDirectory=/root/dev/orbiter
+ExecStart=/root/.nvm/versions/node/v20.20.1/bin/npx vite --host 0.0.0.0 --port 5173
+Restart=always
+RestartSec=5
+Environment=NODE_ENV=development
+Environment=PATH=/root/.nvm/versions/node/v20.20.1/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,15 @@
+[Unit]
+Description=Orchestrator Hono API
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/root/dev/orbiter
+ExecStart=/root/.nvm/versions/node/v20.20.1/bin/npx tsx server/index.ts
+Restart=always
+RestartSec=5
+Environment=NODE_ENV=production
+Environment=PATH=/root/.nvm/versions/node/v20.20.1/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+[Install]
+WantedBy=multi-user.target
