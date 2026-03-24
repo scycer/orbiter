@@ -1,0 +1,7 @@
+[
+  {"id":"seed0001","title":"Build dashboard layout with sidebar and header","description":"Create the main app shell.","status":"pending","priority":"high","assignee":"claude","createdAt":"2026-03-24T00:00:00.000Z","updatedAt":"2026-03-24T00:00:00.000Z","tags":["ui","phase1"]},
+  {"id":"seed0002","title":"Build task list page with filters and keyboard nav","description":"TaskList component showing all tasks as cards.","status":"pending","priority":"high","assignee":"claude","createdAt":"2026-03-24T00:00:00.000Z","updatedAt":"2026-03-24T00:00:00.000Z","tags":["ui","phase1"]},
+  {"id":"seed0003","title":"Build task detail page with markdown rendering","description":"Full task detail view.","status":"pending","priority":"high","assignee":"claude","createdAt":"2026-03-24T00:00:00.000Z","updatedAt":"2026-03-24T00:00:00.000Z","tags":["ui","phase1"]},
+  {"id":"seed0004","title":"Add command palette and keyboard shortcut system","description":"Integrate cmdk.","status":"pending","priority":"medium","assignee":"claude","createdAt":"2026-03-24T00:00:00.000Z","updatedAt":"2026-03-24T00:00:00.000Z","tags":["ui","phase1"]},
+  {"id":"seed0005","title":"Wire up SSE for real-time task updates","description":"Create useSSE hook.","status":"pending","priority":"medium","assignee":"claude","createdAt":"2026-03-24T00:00:00.000Z","updatedAt":"2026-03-24T00:00:00.000Z","tags":["ui","phase1"]}
+]
