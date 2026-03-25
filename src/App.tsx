@@ -7,6 +7,7 @@ import TaskList from './pages/TaskList'
 import TaskDetail from './pages/TaskDetail'
 import Status from './pages/Status'
 import Spec from './pages/Spec'
+import Draw from './pages/Draw'
 import CommandPalette from './components/CommandPalette'
 import { useSSE } from './lib/useSSE'
 
@@ -27,6 +28,7 @@ function AppInner() {
             <Route path="/tasks/:id" element={<TaskDetail />} />
             <Route path="/status" element={<Status />} />
             <Route path="/spec" element={<Spec />} />
+            <Route path="/draw" element={<Draw />} />
           </Route>
         </Routes>
         <CommandPalette />

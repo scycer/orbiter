@@ -1,10 +1,11 @@
 import { Outlet, NavLink } from 'react-router-dom'
-import { LayoutDashboard, ListTodo, Activity, Info, BookOpen } from 'lucide-react'
+import { LayoutDashboard, ListTodo, Activity, Info, BookOpen, PenTool } from 'lucide-react'
 
 const nav = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/tasks', icon: ListTodo, label: 'Tasks' },
   { to: '/spec', icon: BookOpen, label: 'Spec' },
+  { to: '/draw', icon: PenTool, label: 'Draw' },
   { to: '/status', icon: Info, label: 'Status' },
 ]
 
