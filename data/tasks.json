@@ -3,12 +3,36 @@
     "id": "3f410b5d",
     "title": "Excalidraw test",
     "description": "Make a plan of how to best be able to inject something into the excalidraw and somehow extract something from it.",
-    "status": "review",
+    "status": "done",
     "priority": "low",
     "createdAt": "2026-03-25T04:39:34.811Z",
-    "updatedAt": "2026-03-25T04:40:57.159Z",
+    "updatedAt": "2026-03-25T05:18:42.805Z",
     "tags": [],
     "assignee": "claude",
     "output": "## Plan: Excalidraw Injection & Extraction\n\nI investigated the `@excalidraw/excalidraw` v0.18.0 API as used in `src/pages/Draw.tsx`. Here's a concrete plan for injecting data in and extracting data out.\n\n### Current State\n`Draw.tsx` renders a bare `<Excalidraw theme=\"dark\" />` with no data flow — no ref, no callbacks, no persistence.\n\n### Injection (getting data IN)\n\n**Option A: `initialData` prop** — Load a scene on mount.\n```tsx\n<Excalidraw\n  theme=\"dark\"\n  initialData={{\n    elements: convertToExcalidrawElements([...]),\n    appState: { viewBackgroundColor: '#0f0f17' },\n  }}\n/>\n```\n`convertToExcalidrawElements` (exported from the lib) converts simplified element descriptors into full Excalidraw elements. You can pass rectangles, text, arrows, etc.\n\n**Option B: `excalidrawAPI` imperative ref** — Inject at any time after mount.\n```tsx\nconst [api, setApi] = useState<ExcalidrawImperativeAPI | null>(null);\n<Excalidraw excalidrawAPI={setApi} />\n// Later:\napi.updateScene({ elements: [...] });\n```\nThis lets you push elements programmatically at any time (e.g. from a button, from an API response, from an agent generating a diagram).\n\n### Extraction (getting data OUT)\n\n**Option A: `onChange` callback** — Fires on every scene change.\n```tsx\n<Excalidraw\n  onChange={(elements, appState, files) => {\n    // elements = full scene as ExcalidrawElement[]\n    // Save to backend, debounced\n  }}\n/>\n```\n\n**Option B: Imperative API snapshot** — Read on demand.\n```tsx\nconst elements = api.getSceneElements();\nconst appState = api.getAppState();\nconst files = api.getFiles();\n```\n\n**Option C: Serialize to JSON** — For saving/loading `.excalidraw` files.\n```tsx\nimport { serializeAsJSON } from '@excalidraw/excalidraw';\nconst json = serializeAsJSON(elements, appState, files, 'local');\n// POST to /api/drawings/:id\n```\n\n**Option D: Export as image** — For thumbnails or sharing.\n```tsx\nimport { exportToBlob, exportToSvg } from '@excalidraw/excalidraw';\nconst blob = await exportToBlob({ elements, appState, files });\nconst svg = await exportToSvg({ elements, appState, files });\n```\n\n### Recommended Architecture\n\n1. **Store drawings as `.excalidraw` JSON files** in `data/drawings/` (consistent with the file-based storage pattern).\n2. **Add API routes**: `GET/POST /api/drawings/:id` for load/save.\n3. **Wire up `Draw.tsx`**:\n   - Use `excalidrawAPI` prop to capture the imperative API ref.\n   - Use `initialData` to load a saved drawing on mount (fetched from `/api/drawings/:id`).\n   - Use `onChange` (debounced, ~2s) to auto-save back to the server.\n   - Add a toolbar button to manually save/export.\n4. **For agent injection**: An agent can POST elements to `/api/drawings/:id`, then the frontend picks them up (via SSE or polling) and calls `api.updateScene()`.\n5. **For agent extraction**: An agent can GET `/api/drawings/:id` to read the current scene JSON, or GET `/api/drawings/:id/svg` for a rendered image.\n\n### Key Imports Needed\n```tsx\nimport {\n  Excalidraw,\n  convertToExcalidrawElements,\n  serializeAsJSON,\n  exportToBlob,\n  exportToSvg,\n} from '@excalidraw/excalidraw';\nimport type { ExcalidrawImperativeAPI } from '@excalidraw/excalidraw/types';\n```\n\n### No code changes made — this is a research/planning task.\nReady for you to decide which approach to implement."
+  },
+  {
+    "id": "f373747a",
+    "title": "Build SSE-driven agent watcher script",
+    "description": "Create a shell script that listens to the /api/events SSE stream and automatically launches `claude -p \"/agent <id>\"` whenever a new pending task appears. This replaces the manual `/agent` invocation with an always-on listener.\n\n## Proposed approach\n\nA bash script (`watch-agent.sh`) that:\n1. Connects to `http://localhost:3001/api/events` via curl SSE\n2. Parses each SSE `data:` line for task events with `\"status\":\"pending\"`\n3. Extracts the task ID and runs `claude -p \"/agent <id>\"`\n4. Waits for Claude to finish before picking up the next task (sequential, not parallel)\n5. Reconnects automatically if the SSE connection drops\n\n## Rough implementation\n\n```bash\n#!/bin/bash\nAPI=http://localhost:3001\nwhile true; do\n  curl -s -N \"$API/api/events\" | while IFS= read -r line; do\n    [[ \"$line\" == data:* ]] || continue\n    JSON=\"${line#data: }\"\n    STATUS=$(echo \"$JSON\" | jq -r '.status // empty' 2>/dev/null)\n    ID=$(echo \"$JSON\" | jq -r '.id // empty' 2>/dev/null)\n    if [[ \"$STATUS\" == \"pending\" && -n \"$ID\" ]]; then\n      echo \"[$(date)] Picking up task $ID\"\n      claude -p \"/agent $ID\"\n      echo \"[$(date)] Finished task $ID\"\n    fi\n  done\n  echo \"[$(date)] SSE disconnected, reconnecting in 5s...\"\n  sleep 5\ndone\n```\n\n## Questions for review\n- Should this run as a systemd service on the VPS, or just a tmux/screen session?\n- Should it handle multiple tasks in parallel, or strictly one at a time?\n- Should there be a cooldown/rate limit between task pickups?\n- Should it filter by priority (e.g. only auto-pick high/urgent)?",
+    "status": "review",
+    "priority": "medium",
+    "assignee": "claude",
+    "createdAt": "2026-03-25T04:58:02.356Z",
+    "updatedAt": "2026-03-25T04:58:02.356Z",
+    "tags": [
+      "agent",
+      "infra"
+    ]
+  },
+  {
+    "id": "301023a9",
+    "title": "Do excalidraw test plan",
+    "description": "",
+    "status": "pending",
+    "priority": "urgent",
+    "createdAt": "2026-03-25T05:19:15.853Z",
+    "updatedAt": "2026-03-25T05:19:15.853Z",
+    "tags": []
   }
 ]

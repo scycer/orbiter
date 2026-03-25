@@ -46,19 +46,63 @@ export default function Status() {
 
       {/* Networking */}
       <Section icon={Globe} title="Networking">
-        <Row label="Public URL" value="orchestrator-devbox.danhoek.dev" link="https://orchestrator-devbox.danhoek.dev" />
-        <Row label="Tunnel" value="Cloudflare Tunnel (cloudflared)" />
+        <Row label="Production" value="orchestrator-devbox.danhoek.dev" link="https://orchestrator-devbox.danhoek.dev" />
+        <Row label="Development" value="dev-orchestrator-devbox.danhoek.dev" link="https://dev-orchestrator-devbox.danhoek.dev" />
+        <Row label="Tunnel" value="Cloudflare Tunnel (cloudflared in Docker)" />
         <Row label="Tunnel ID" value="ea11b08c-0009-4567-b652-a7026dbef563" mono />
-        <Row label="Auth" value="Cloudflare Access (no app-level auth)" />
+        <Row label="Auth" value="Cloudflare Access — email whitelist (Daniel only)" />
+        <Row label="Zero Trust org" value="danhoek.cloudflareaccess.com" mono />
         <Row label="SSL" value="Cloudflare edge (Universal SSL)" />
+        <Row label="Unauthed access" value="HTTP 302 → Cloudflare login gate" />
       </Section>
 
       {/* Data */}
       <Section icon={Database} title="Data Model">
         <Row label="Entity" value="Task" />
-        <Row label="Statuses" value="pending → assigned → in-progress → review → approved / rejected → done" />
-        <Row label="Priorities" value="low, medium, high, urgent" />
         <Row label="Fields" value="id, title, description, status, priority, assignee, tags, output, timestamps" />
+        <Row label="Priorities" value="low, medium, high, urgent" />
+      </Section>
+
+      {/* Task Lifecycle */}
+      <Section icon={Clock} title="Task Lifecycle">
+        <div className="mb-3">
+          <Pre>{'pending → assigned → in-progress → review → approved / rejected → done'}</Pre>
+        </div>
+        <StatusRow
+          status="pending"
+          color="text-text-secondary"
+          description="Task is waiting to be picked up. This is what /agent looks for — it grabs the highest-priority pending task."
+        />
+        <StatusRow
+          status="assigned"
+          color="text-text-secondary"
+          description="An agent has claimed the task (set assignee) but hasn't started work yet. Prevents two agents from grabbing the same task."
+        />
+        <StatusRow
+          status="in-progress"
+          color="text-accent"
+          description="Agent is actively working — reading code, making changes, running type checks. The task is locked to this agent."
+        />
+        <StatusRow
+          status="review"
+          color="text-warning"
+          description="Agent finished and submitted its output. Waiting for you to read the results and approve or reject."
+        />
+        <StatusRow
+          status="approved"
+          color="text-success"
+          description="You accepted the work. The agent's changes are good. Can be moved to done or left as-is."
+        />
+        <StatusRow
+          status="rejected"
+          color="text-error"
+          description="You sent it back. The agent should rework it. Move back to pending to have an agent retry, or update the description with feedback first."
+        />
+        <StatusRow
+          status="done"
+          color="text-success"
+          description="Fully complete and archived. No further action needed."
+        />
       </Section>
 
       {/* API */}
@@ -171,6 +215,15 @@ function Row({ label, value, ok, mono, link }: { label: string; value: string; o
 
 function Pre({ children }: { children: React.ReactNode }) {
   return <pre className="text-xs font-mono text-text-secondary bg-bg border border-border rounded-lg p-3 overflow-x-auto">{children}</pre>
+}
+
+function StatusRow({ status, color, description }: { status: string; color: string; description: string }) {
+  return (
+    <div className="flex items-start gap-3 text-sm py-1.5">
+      <span className={`shrink-0 w-28 md:w-36 text-right text-xs font-mono font-semibold pt-0.5 ${color}`}>{status}</span>
+      <span className="text-text-secondary text-xs leading-relaxed">{description}</span>
+    </div>
+  )
 }
 
 function formatUptime(secs: number) {

@@ -211,6 +211,47 @@ export default function Spec() {
         <p className="mt-3 text-xs">Environments are fully isolated — changes to dev data never affect prod.</p>
       </Section>
 
+      {/* Security */}
+      <Section title="Security & Access">
+        <p className="mb-3">
+          Both sites are protected by <strong className="text-text">Cloudflare Access</strong> (Zero Trust).
+          Unauthenticated requests get a <code className="text-accent">302</code> redirect to the Cloudflare login gate.
+        </p>
+        <div className="bg-bg border border-border rounded-lg p-3 space-y-2 text-xs">
+          <div className="flex items-start gap-3">
+            <span className="text-text-secondary shrink-0 w-32 text-right">Zero Trust org</span>
+            <code className="text-accent">danhoek.cloudflareaccess.com</code>
+          </div>
+          <div className="flex items-start gap-3">
+            <span className="text-text-secondary shrink-0 w-32 text-right">Protected hosts</span>
+            <div>
+              <code className="text-accent">orchestrator-devbox.danhoek.dev</code><br />
+              <code className="text-accent">dev-orchestrator-devbox.danhoek.dev</code>
+            </div>
+          </div>
+          <div className="flex items-start gap-3">
+            <span className="text-text-secondary shrink-0 w-32 text-right">Policy</span>
+            <span>Allow — email whitelist (Daniel only)</span>
+          </div>
+          <div className="flex items-start gap-3">
+            <span className="text-text-secondary shrink-0 w-32 text-right">App-level auth</span>
+            <span>None — Cloudflare Access handles it before traffic reaches the app</span>
+          </div>
+          <div className="flex items-start gap-3">
+            <span className="text-text-secondary shrink-0 w-32 text-right">SSL</span>
+            <span>Cloudflare edge (Universal SSL) — no certs on the VPS</span>
+          </div>
+        </div>
+        <p className="mt-3 text-xs">
+          The tunnel (<code className="text-accent">cloudflared</code>) runs as a Docker container on the VPS.
+          Traffic flow: <strong className="text-text">Browser → Cloudflare Access gate → Cloudflare edge → Tunnel → VPS containers</strong>.
+        </p>
+        <p className="mt-2 text-xs">
+          Verified 2026-03-25: unauthenticated <code>curl</code> to both hosts returns <code className="text-accent">HTTP 302</code> →
+          <code className="text-accent">danhoek.cloudflareaccess.com/.../login</code>.
+        </p>
+      </Section>
+
       {/* Containers */}
       <Section title="Container Architecture">
         <p className="mb-3">Everything runs in Docker Compose on a single VPS:</p>
