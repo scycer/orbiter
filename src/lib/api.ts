@@ -1,5 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 
+export interface ActivityEntry {
+  timestamp: string
+  event: string
+  tool?: string
+  summary: string
+  sessionId?: string
+}
+
 export interface Task {
   id: string
   title: string
@@ -11,6 +19,7 @@ export interface Task {
   updatedAt: string
   output?: string
   tags: string[]
+  activity?: ActivityEntry[]
 }
 
 async function api<T>(url: string, opts?: RequestInit): Promise<T> {

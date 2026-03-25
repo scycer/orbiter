@@ -2,7 +2,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useTask, useApproveTask, useRejectTask, useUpdateTask, useDeleteTask } from '../lib/api'
 import { useEffect, useCallback, useState } from 'react'
 import { toast } from 'sonner'
-import { ArrowLeft, Check, X, Trash2, Pencil } from 'lucide-react'
+import { ArrowLeft, Check, X, Trash2, Pencil, Activity } from 'lucide-react'
 
 const STATUSES = ['pending', 'assigned', 'in-progress', 'review', 'approved', 'rejected', 'done'] as const
 
@@ -158,6 +158,39 @@ export default function TaskDetail() {
             <pre className="text-xs bg-bg border border-border rounded-lg p-3 overflow-x-auto font-mono whitespace-pre-wrap text-text-secondary">
               {task.output}
             </pre>
+          </div>
+        )}
+
+        {/* Activity Feed */}
+        {task.activity && task.activity.length > 0 && (
+          <div>
+            <h2 className="flex items-center gap-1.5 text-xs text-text-secondary mb-2">
+              <Activity className="w-3.5 h-3.5" /> Activity
+              <span className="text-[10px] opacity-60">({task.activity.length})</span>
+            </h2>
+            <div className="bg-bg border border-border rounded-lg max-h-64 overflow-y-auto">
+              {[...task.activity].reverse().map((entry, i) => {
+                const eventColor =
+                  entry.event === 'PostToolUseFailure' ? 'text-error'
+                  : entry.event === 'Stop' ? 'text-accent'
+                  : entry.event === 'SessionStart' || entry.event === 'SessionEnd' ? 'text-warning'
+                  : entry.event === 'SubagentStart' || entry.event === 'SubagentStop' ? 'text-success'
+                  : 'text-text-secondary'
+                return (
+                  <div key={i} className="flex items-start gap-2 px-3 py-1.5 border-b border-border/50 last:border-0 text-[11px]">
+                    <span className="text-text-secondary opacity-60 font-mono whitespace-nowrap shrink-0">
+                      {new Date(entry.timestamp).toLocaleTimeString()}
+                    </span>
+                    {entry.tool && (
+                      <span className="text-accent font-mono shrink-0">{entry.tool}</span>
+                    )}
+                    <span className={`${eventColor} truncate`} title={entry.summary}>
+                      {entry.summary}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
           </div>
         )}
 

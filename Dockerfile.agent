@@ -1,0 +1,26 @@
+FROM node:20-slim
+
+# Install system deps (git needed by Claude Code)
+RUN apt-get update && apt-get install -y git curl jq && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user with UID 1000 (matches node user, writable workspace)
+RUN useradd -m -s /bin/bash -u 1000 -o agent
+
+# Install Claude Code globally
+RUN npm install -g @anthropic-ai/claude-code
+
+# Set up workspace directory
+RUN mkdir -p /workspace && chown agent:agent /workspace
+
+# Switch to non-root user
+USER agent
+
+# Git safe directory (mounted workspace will be owned by root on host)
+RUN git config --global safe.directory /workspace
+
+# Create Claude config directory
+RUN mkdir -p /home/agent/.claude
+
+WORKDIR /workspace
+
+CMD ["bash"]

@@ -51,6 +51,24 @@ services:
     depends_on:
       - dev-api
 
+  agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.agent
+    environment:
+      - API_URL=http://prod:3001
+      - CLAUDE_CODE_OAUTH_TOKEN=${CLAUDE_CODE_OAUTH_TOKEN}
+    volumes:
+      - .:/workspace
+      - claude-home:/home/agent/.claude
+    working_dir: /workspace
+    command: ["bash", "/workspace/agent/watch.sh"]
+    networks:
+      - orbiter
+    restart: unless-stopped
+    depends_on:
+      - prod
+
   tunnel:
     image: cloudflare/cloudflared:latest
     command: tunnel --no-autoupdate --config /etc/cloudflared/config.yml run
@@ -61,3 +79,6 @@ services:
     depends_on:
       - prod
       - dev
+
+volumes:
+  claude-home:

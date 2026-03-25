@@ -5,3 +5,4 @@ cloudflared/credentials.json
 data-dev/
 public/fonts/
 package-lock.json
+.env
