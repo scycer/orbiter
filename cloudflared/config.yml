@@ -1,0 +1,11 @@
+tunnel: ea11b08c-0009-4567-b652-a7026dbef563
+credentials-file: /etc/cloudflared/credentials.json
+
+ingress:
+  - hostname: devbox.danhoek.dev
+    service: ssh://localhost:22
+  - hostname: orchestrator-devbox.danhoek.dev
+    service: http://localhost:3001
+  - hostname: dev-orchestrator-devbox.danhoek.dev
+    service: http://localhost:5173
+  - service: http_status:404

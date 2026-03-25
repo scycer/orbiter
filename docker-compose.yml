@@ -1,0 +1,63 @@
+networks:
+  orbiter:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24
+
+services:
+  prod:
+    build:
+      context: .
+      target: prod
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - DATA_FILE=./data/tasks.json
+    volumes:
+      - ./data:/app/data
+    networks:
+      - orbiter
+    restart: unless-stopped
+
+  dev-api:
+    build:
+      context: .
+      target: prod
+    ports:
+      - "3002:3002"
+    environment:
+      - PORT=3002
+      - DATA_FILE=./data/tasks.json
+    volumes:
+      - ./data-dev:/app/data
+    networks:
+      - orbiter
+    restart: unless-stopped
+
+  dev:
+    build:
+      context: .
+      target: dev
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    networks:
+      - orbiter
+    restart: unless-stopped
+    depends_on:
+      - dev-api
+
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    command: tunnel --no-autoupdate --config /etc/cloudflared/config.yml run
+    volumes:
+      - ./cloudflared:/etc/cloudflared:ro
+    network_mode: host
+    restart: unless-stopped
+    depends_on:
+      - prod
+      - dev

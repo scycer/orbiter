@@ -1,6 +1,5 @@
 node_modules/
 dist/
 data/*.tmp
-node_modules/
-dist/
-data/*.tmp
+cloudflared/credentials.json
+data-dev/

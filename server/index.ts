@@ -1,11 +1,13 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { serve } from '@hono/node-server'
+import { serveStatic } from '@hono/node-server/serve-static'
 import { readFileSync, writeFileSync, existsSync, renameSync } from 'fs'
 import { randomUUID } from 'crypto'
 
 const app = new Hono()
-const DATA_FILE = './data/tasks.json'
+const DATA_FILE = process.env.DATA_FILE || './data/tasks.json'
+const PORT = parseInt(process.env.PORT || '3001', 10)
 const startTime = Date.now()
 const sseClients = new Set<ReadableStreamDefaultController>()
 
@@ -33,5 +35,18 @@ app.post('/api/tasks/:id/approve', (c) => { const t = readTasks(); const i = t.f
 app.post('/api/tasks/:id/reject', (c) => { const t = readTasks(); const i = t.findIndex(x => x.id === c.req.param('id')); if (i===-1) return c.json({error:'Not found'},404); t[i] = { ...t[i], status:'rejected', updatedAt: new Date().toISOString() }; writeTasks(t); broadcast('task:updated', t[i]); return c.json(t[i]) })
 app.delete('/api/tasks/:id', (c) => { const t = readTasks(); const i = t.findIndex(x => x.id === c.req.param('id')); if (i===-1) return c.json({error:'Not found'},404); const [r] = t.splice(i,1); writeTasks(t); broadcast('task:deleted', {id:r.id}); return c.json({ok:true}) })
 
-console.log('Hono API running on http://localhost:3001')
-serve({ fetch: app.fetch, port: 3001 })
+// Serve static files from dist/ (prod)
+app.use('*', serveStatic({ root: './dist' }))
+
+// SPA fallback — serve index.html for any non-API route
+app.get('*', (c) => {
+  try {
+    const html = readFileSync('./dist/index.html', 'utf-8')
+    return c.html(html)
+  } catch {
+    return c.text('Not found', 404)
+  }
+})
+
+console.log(`Hono API running on http://localhost:${PORT} (data: ${DATA_FILE})`)
+serve({ fetch: app.fetch, port: PORT })
